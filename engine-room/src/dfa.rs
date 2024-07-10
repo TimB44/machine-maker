@@ -5,7 +5,7 @@ mod dfa_tests;
 pub struct Dfa {
     transition_table: Vec<usize>,
     accept_states: HashSet<usize>,
-    max_state: usize,
+    // max_state: usize,
     max_char: usize,
 }
 
@@ -30,7 +30,7 @@ impl Dfa {
         Ok(Dfa {
             transition_table,
             accept_states,
-            max_state,
+            // max_state,
             max_char,
         })
     }
@@ -60,16 +60,13 @@ impl Dfa {
 
     fn states<'a>(&'a self, input: &'a Vec<usize>) -> impl Iterator<Item = usize> + 'a {
         let mut state = 0;
-        input
-            .iter()
-            .map(move |c| {
-                let tmp = state;
-                state = self.next_state(state, *c);
-                tmp
-            })
-            .chain([state])
+        Some(0).into_iter().chain(input.iter().map(move |c| {
+            state = self.next_state(state, *c);
+            state
+        }))
     }
 
+    // TODO convert to vec<u8> and use max_state to determine # of bytes
     fn next_state(&self, cur_state: usize, char: usize) -> usize {
         self.transition_table[cur_state * (self.max_char + 1) + char]
     }
