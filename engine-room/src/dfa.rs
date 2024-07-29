@@ -2,7 +2,7 @@ use crate::{
     machine_utils::{table_lookup, validate_input},
     StateMachine, TapeMovement,
 };
-use std::{collections::HashSet, u16, usize};
+use std::collections::HashSet;
 pub struct Dfa {
     transition_table: Vec<u16>,
     accept_states: HashSet<u16>,
@@ -58,7 +58,7 @@ impl StateMachine for Dfa {
         validate_input(input, self.max_char)?;
         Ok(self.accept_states.contains(
             &self
-                .states(&input)
+                .states(input)
                 .last()
                 .expect("The first state will always be visited no matter the input"),
         ))
