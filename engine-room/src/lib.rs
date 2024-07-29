@@ -1,10 +1,11 @@
 pub mod dfa;
-mod machine_utils;
 pub mod multi_tm;
 pub mod nfa;
 pub mod pda;
 pub mod stay_tm;
 pub mod tm;
+
+mod machine_utils;
 
 /// # State Machine
 ///
