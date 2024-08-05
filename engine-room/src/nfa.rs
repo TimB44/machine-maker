@@ -205,7 +205,6 @@ mod nfa_tests {
     fn build_nfa_large() {
         assert!(Nfa::build(
             (0..100)
-                .into_iter()
                 .map(|n| HashSet::from([(n + 1) % 10]))
                 .collect(),
             HashSet::from([3]),
@@ -319,7 +318,6 @@ mod nfa_tests {
     fn build_nfa_large_wrong_dims() {
         assert!(Nfa::build(
             (0..100)
-                .into_iter()
                 .map(|n| HashSet::from([(n + 1) % 10]))
                 .collect(),
             HashSet::from([3]),
@@ -330,7 +328,6 @@ mod nfa_tests {
 
         assert!(Nfa::build(
             (0..100)
-                .into_iter()
                 .map(|n| HashSet::from([(n + 1) % 10]))
                 .collect(),
             HashSet::from([3]),
@@ -341,7 +338,6 @@ mod nfa_tests {
 
         assert!(Nfa::build(
             (0..100)
-                .into_iter()
                 .map(|n| HashSet::from([(n + 1) % 10]))
                 .collect(),
             HashSet::from([3]),
@@ -352,7 +348,6 @@ mod nfa_tests {
 
         assert!(Nfa::build(
             (0..100)
-                .into_iter()
                 .map(|n| HashSet::from([(n + 1) % 10]))
                 .collect(),
             HashSet::from([3]),
@@ -363,7 +358,6 @@ mod nfa_tests {
 
         assert!(Nfa::build(
             (0..100)
-                .into_iter()
                 .map(|n| HashSet::from([(n + 1) % 10]))
                 .collect(),
             HashSet::from([3]),
@@ -449,7 +443,6 @@ mod nfa_tests {
 
         assert!(Nfa::build(
             (0..100)
-                .into_iter()
                 .map(|n| HashSet::from([(n + 1) % 10]))
                 .collect(),
             HashSet::from([9]),
@@ -460,7 +453,6 @@ mod nfa_tests {
 
         assert!(Nfa::build(
             (0..100)
-                .into_iter()
                 .map(|n| HashSet::from([(n + 1) % 10]))
                 .collect(),
             HashSet::from([9, 10]),
@@ -471,7 +463,6 @@ mod nfa_tests {
 
         assert!(Nfa::build(
             (0..100)
-                .into_iter()
                 .map(|n| HashSet::from([(n + 1) % 10]))
                 .collect(),
             HashSet::from([11]),
@@ -482,7 +473,6 @@ mod nfa_tests {
 
         assert!(Nfa::build(
             (0..100)
-                .into_iter()
                 .map(|n| HashSet::from([(n + 1) % 10]))
                 .collect(),
             HashSet::from_iter(100..1000),
@@ -493,7 +483,6 @@ mod nfa_tests {
 
         assert!(Nfa::build(
             (0..100)
-                .into_iter()
                 .map(|n| HashSet::from([(n + 1) % 10]))
                 .collect(),
             HashSet::from_iter(0..20),
@@ -504,7 +493,6 @@ mod nfa_tests {
 
         assert!(Nfa::build(
             (0..100)
-                .into_iter()
                 .map(|n| HashSet::from([(n + 1) % 10]))
                 .collect(),
             HashSet::from([20]),
@@ -515,10 +503,9 @@ mod nfa_tests {
 
         assert!(Nfa::build(
             (0..100)
-                .into_iter()
                 .map(|n| HashSet::from([(n + 1) % 10]))
                 .collect(),
-            HashSet::from_iter((0..20).into_iter().map(|n| n * 7)),
+            HashSet::from_iter((0..20).map(|n| n * 7)),
             19,
             4
         )
@@ -529,7 +516,6 @@ mod nfa_tests {
     fn to_large_chars_errors() {
         let nfa = Nfa::build(
             (0..100)
-                .into_iter()
                 .map(|n| HashSet::from([(n + 1) % 10]))
                 .collect(),
             HashSet::from([9]),
@@ -600,7 +586,7 @@ mod nfa_tests {
             nfa.trace_states(&[[0].repeat(1000), vec![1]].concat())
                 .unwrap(),
             add_tape_mov(
-                [vec![0].repeat(1001), vec![1]].concat(),
+                [[0].repeat(1001), vec![1]].concat(),
                 TapeMovement::Right(None)
             )
         );
@@ -620,7 +606,7 @@ mod nfa_tests {
         assert_eq!(
             nfa.trace_states(&[[1].repeat(1000), vec![0]].concat())
                 .unwrap(),
-            add_tape_mov(vec![0].repeat(1002), TapeMovement::Right(None))
+            add_tape_mov([0].repeat(1002), TapeMovement::Right(None))
         );
         assert_eq!(
             nfa.trace_states(&[0, 1, 1]).unwrap(),
