@@ -48,7 +48,7 @@ impl EpsilonNfa {
         for cur_state in 0..=max_state {
             seen.fill(false);
             dfs(
-                &transition_table,
+                transition_table,
                 &mut seen,
                 max_state,
                 max_char,
@@ -81,11 +81,10 @@ impl EpsilonNfa {
             let can_reach: HashSet<u16> = epsilon_closure[cur_state]
                 .iter()
                 .copied()
-                .map(|state| {
+                .flat_map(|state| {
                     &transition_table
-                        [table_lookup(state as usize, cur_char as usize, max_char as usize)]
+                        [table_lookup(state as usize, cur_char, max_char as usize)]
                 })
-                .flatten()
                 .copied()
                 .collect();
 
@@ -93,8 +92,7 @@ impl EpsilonNfa {
                 can_reach
                     .iter()
                     .copied()
-                    .map(|s| &epsilon_closure[s as usize])
-                    .flatten(),
+                    .flat_map(|s| &epsilon_closure[s as usize]),
             )
         }
 
