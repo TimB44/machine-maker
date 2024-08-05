@@ -1,6 +1,9 @@
+use machine_utils::validate_input;
+
 pub mod dfa;
 pub mod multi_tm;
 pub mod nfa;
+pub mod nfa_e;
 pub mod pda;
 pub mod stay_tm;
 pub mod tm;
@@ -19,10 +22,26 @@ mod machine_utils;
 ///
 pub trait StateMachine {
     /// Checks if the state machine accepts the given input.
-    fn accepts(&self, input: &[u16]) -> Result<bool, ()>;
+    fn accepts(&self, input: &[u16]) -> Result<bool, ()> {
+        validate_input(input, self.max_input())?;
+        Ok(self.accepts_validated(input))
+    }
+    /// Checks if the state machine accepts the given input.
+    fn accepts_validated(&self, input: &[u16]) -> bool;
 
     /// Traces the states and movements of the state machine for the given input.
-    fn trace_states(&self, input: &[u16]) -> Result<Vec<(u16, Vec<TapeMovement>)>, ()>;
+    fn trace_states(&self, input: &[u16]) -> Result<Vec<(u16, Vec<TapeMovement>)>, ()> {
+        validate_input(input, self.max_input())?;
+        Ok(self.trace_states_validated(input))
+    }
+    /// Traces the states and movements of the state machine for the given input.
+    fn trace_states_validated(&self, input: &[u16]) -> Vec<(u16, Vec<TapeMovement>)>;
+
+    /// Returns the largest state in this machine
+    fn max_state(&self) -> u16;
+
+    /// Returns the largest input in this machine
+    fn max_input(&self) -> u16;
 }
 
 /// # Tape Movement

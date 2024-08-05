@@ -1,12 +1,12 @@
 use crate::{
-    machine_utils::{table_lookup, validate_input},
+    machine_utils::{add_tape_mov, table_lookup},
     StateMachine, TapeMovement,
 };
 use std::collections::HashSet;
 pub struct Dfa {
     transition_table: Vec<u16>,
     accept_states: HashSet<u16>,
-    // max_state: u16,
+    max_state: u16,
     max_char: u16,
 }
 
@@ -31,7 +31,7 @@ impl Dfa {
         Ok(Dfa {
             transition_table,
             accept_states,
-            // max_state,
+            max_state,
             max_char,
         })
     }
@@ -54,30 +54,32 @@ impl Dfa {
 }
 
 impl StateMachine for Dfa {
-    fn accepts(&self, input: &[u16]) -> Result<bool, ()> {
-        validate_input(input, self.max_char)?;
-        Ok(self.accept_states.contains(
+    fn accepts_validated(&self, input: &[u16]) -> bool {
+        self.accept_states.contains(
             &self
                 .states(input)
                 .last()
                 .expect("The first state will always be visited no matter the input"),
-        ))
+        )
     }
 
-    fn trace_states(&self, input: &[u16]) -> Result<Vec<(u16, Vec<crate::TapeMovement>)>, ()> {
-        validate_input(input, self.max_char)?;
-        let x = Ok(self
-            .states(input)
-            .map(|s| (s, vec![TapeMovement::Right(None)]))
-            .collect());
-        x
+    fn trace_states_validated(&self, input: &[u16]) -> Vec<(u16, Vec<TapeMovement>)> {
+        add_tape_mov(self.states(input).collect(), TapeMovement::Right(None))
+    }
+
+    fn max_state(&self) -> u16 {
+        self.max_state
+    }
+
+    fn max_input(&self) -> u16 {
+        self.max_char
     }
 }
 
 #[cfg(test)]
 mod dfa_tests {
 
-    use crate::{dfa::Dfa, machine_utils::add_tape_mov, StateMachine};
+    use crate::{dfa::Dfa, machine_utils::add_tape_mov, StateMachine, TapeMovement};
     use std::collections::HashSet;
 
     #[test]
@@ -163,7 +165,7 @@ mod dfa_tests {
     #[test]
     fn accepts_odd_length_dfa() {
         let odd_len_dfa = Dfa::build(vec![1, 0], HashSet::from([1]), 1, 0).unwrap();
-        let expected_states = add_tape_mov(vec![0, 1].repeat(100));
+        let expected_states = add_tape_mov(vec![0, 1].repeat(100), TapeMovement::Right(None));
         for len in 3..100 {
             let input = vec![0].repeat(len);
             assert_eq!(odd_len_dfa.accepts(&input).unwrap(), len % 2 == 1);
@@ -183,7 +185,7 @@ mod dfa_tests {
             end_in_2_dfa
                 .trace_states(&vec![0, 1, 0, 1, 0, 1, 0])
                 .unwrap(),
-            add_tape_mov(vec![0, 0, 0, 0, 0, 0, 0, 0])
+            add_tape_mov(vec![0, 0, 0, 0, 0, 0, 0, 0], TapeMovement::Right(None))
         );
 
         assert!(!end_in_2_dfa
@@ -193,37 +195,40 @@ mod dfa_tests {
             end_in_2_dfa
                 .trace_states(&vec![0, 1, 0, 1, 0, 2, 2, 0, 1, 2, 1])
                 .unwrap(),
-            add_tape_mov(vec![0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 0])
+            add_tape_mov(
+                vec![0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 0],
+                TapeMovement::Right(None)
+            )
         );
 
         assert!(!end_in_2_dfa.accepts(&vec![0, 1, 2, 1]).unwrap());
         assert_eq!(
             end_in_2_dfa.trace_states(&vec![0, 1, 2, 1]).unwrap(),
-            add_tape_mov(vec![0, 0, 0, 1, 0])
+            add_tape_mov(vec![0, 0, 0, 1, 0], TapeMovement::Right(None))
         );
 
         assert!(end_in_2_dfa.accepts(&vec![0, 0, 0, 2]).unwrap());
         assert_eq!(
             end_in_2_dfa.trace_states(&vec![0, 0, 0, 2]).unwrap(),
-            add_tape_mov(vec![0, 0, 0, 0, 1])
+            add_tape_mov(vec![0, 0, 0, 0, 1], TapeMovement::Right(None))
         );
 
         assert!(end_in_2_dfa.accepts(&vec![0, 1, 2]).unwrap());
         assert_eq!(
             end_in_2_dfa.trace_states(&vec![0, 1, 2]).unwrap(),
-            add_tape_mov(vec![0, 0, 0, 1])
+            add_tape_mov(vec![0, 0, 0, 1], TapeMovement::Right(None))
         );
 
         assert!(end_in_2_dfa.accepts(&vec![2, 2, 2, 2, 2]).unwrap());
         assert_eq!(
             end_in_2_dfa.trace_states(&vec![2, 2, 2, 2, 2]).unwrap(),
-            add_tape_mov(vec![0, 1, 1, 1, 1, 1])
+            add_tape_mov(vec![0, 1, 1, 1, 1, 1], TapeMovement::Right(None))
         );
 
         assert!(end_in_2_dfa.accepts(&vec![2, 2, 0, 2]).unwrap());
         assert_eq!(
             end_in_2_dfa.trace_states(&vec![2, 2, 0, 2]).unwrap(),
-            add_tape_mov(vec![0, 1, 1, 0, 1])
+            add_tape_mov(vec![0, 1, 1, 0, 1], TapeMovement::Right(None))
         );
     }
 
@@ -242,7 +247,7 @@ mod dfa_tests {
             accepts_len_100
                 .trace_states(&vec![0, 1, 2, 3, 4, 5, 6, 7, 8, 9].repeat(10))
                 .unwrap(),
-            add_tape_mov((0..=100).collect::<Vec<u16>>())
+            add_tape_mov((0..=100).collect::<Vec<u16>>(), TapeMovement::Right(None))
         );
         let mut input = vec![];
         for i in 0..100 {
@@ -255,5 +260,90 @@ mod dfa_tests {
             assert!(!accepts_len_100.accepts(&input).unwrap());
             input.push(i % 7);
         }
+    }
+
+    #[test]
+    fn accepts_0_star_1_star() {
+        let dfa = Dfa::build(vec![0, 1, 2, 1, 2, 2], HashSet::from([0, 1]), 2, 1).unwrap();
+        assert!(dfa.accepts(&[]).unwrap());
+        assert_eq!(
+            dfa.trace_states(&[]).unwrap(),
+            add_tape_mov(vec![0], TapeMovement::Right(None))
+        );
+
+        assert!(dfa.accepts(&[0, 1]).unwrap());
+        assert_eq!(
+            dfa.trace_states(&[0, 1]).unwrap(),
+            add_tape_mov(vec![0, 0, 1], TapeMovement::Right(None))
+        );
+
+        assert!(dfa.accepts(&[0, 0, 0, 1]).unwrap());
+        assert_eq!(
+            dfa.trace_states(&[0, 0, 0, 1]).unwrap(),
+            add_tape_mov(vec![0, 0, 0, 0, 1], TapeMovement::Right(None))
+        );
+
+        assert!(dfa.accepts(&[0, 1, 1, 1]).unwrap());
+        assert_eq!(
+            dfa.trace_states(&[0, 1, 1, 1]).unwrap(),
+            add_tape_mov(vec![0, 0, 1, 1, 1], TapeMovement::Right(None))
+        );
+
+        assert!(dfa.accepts(&[0, 0, 1, 1]).unwrap());
+        assert_eq!(
+            dfa.trace_states(&[0, 0, 1, 1]).unwrap(),
+            add_tape_mov(vec![0, 0, 0, 1, 1], TapeMovement::Right(None))
+        );
+
+        assert!(dfa.accepts(&[0, 0, 0, 0, 0, 0, 1, 1]).unwrap());
+        assert_eq!(
+            dfa.trace_states(&[0, 0, 0, 0, 0, 0, 1, 1]).unwrap(),
+            add_tape_mov(vec![0, 0, 0, 0, 0, 0, 0, 1, 1], TapeMovement::Right(None))
+        );
+
+        assert!(dfa.accepts(&[0]).unwrap());
+        assert_eq!(
+            dfa.trace_states(&[0]).unwrap(),
+            add_tape_mov(vec![0, 0], TapeMovement::Right(None)),
+        );
+
+        assert!(dfa.accepts(&[0, 0]).unwrap());
+        assert_eq!(
+            dfa.trace_states(&[0, 0]).unwrap(),
+            add_tape_mov(vec![0, 0, 0], TapeMovement::Right(None))
+        );
+
+        assert!(dfa.accepts(&[1]).unwrap());
+        assert_eq!(
+            dfa.trace_states(&[1]).unwrap(),
+            add_tape_mov(vec![0, 1], TapeMovement::Right(None))
+        );
+
+        assert!(!dfa.accepts(&[0, 1, 0]).unwrap());
+        assert_eq!(
+            dfa.trace_states(&[0, 1, 0]).unwrap(),
+            add_tape_mov(vec![0, 0, 1, 2], TapeMovement::Right(None))
+        );
+
+        assert!(!dfa.accepts(&[0, 1, 0, 0, 0]).unwrap());
+        assert_eq!(
+            dfa.trace_states(&[0, 1, 0, 0, 0]).unwrap(),
+            add_tape_mov(vec![0, 0, 1, 2, 2, 2], TapeMovement::Right(None))
+        );
+
+        assert!(!dfa.accepts(&[1, 0]).unwrap());
+        assert_eq!(
+            dfa.trace_states(&[1, 0]).unwrap(),
+            add_tape_mov(vec![0, 1, 2], TapeMovement::Right(None))
+        );
+
+        assert!(!dfa.accepts(&[0, 0, 0, 0, 1, 0, 1, 0, 1]).unwrap());
+        assert_eq!(
+            dfa.trace_states(&[0, 0, 0, 0, 1, 0, 1, 0, 1]).unwrap(),
+            add_tape_mov(
+                vec![0, 0, 0, 0, 0, 1, 2, 2, 2, 2],
+                TapeMovement::Right(None)
+            )
+        );
     }
 }

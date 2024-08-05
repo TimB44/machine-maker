@@ -13,9 +13,12 @@ pub(crate) fn table_lookup(cur_state: usize, cur_char: usize, max_char: usize) -
     cur_state * (max_char + 1) + cur_char
 }
 
-pub(crate) fn add_tape_mov(state_trace: Vec<u16>) -> Vec<(u16, Vec<TapeMovement>)> {
+pub(crate) fn add_tape_mov(
+    state_trace: Vec<u16>,
+    tape_mov: TapeMovement,
+) -> Vec<(u16, Vec<TapeMovement>)> {
     state_trace
         .into_iter()
-        .zip(iter::repeat(vec![TapeMovement::Right(None)]))
+        .zip(iter::repeat(vec![tape_mov]))
         .collect()
 }
