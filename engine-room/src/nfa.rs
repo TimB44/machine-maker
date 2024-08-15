@@ -56,7 +56,7 @@ impl Nfa {
             (input.len() + 1) * (self.max_state as usize + 1)
         );
         debug_assert!(cur_char_index <= input.len());
-        debug_assert!(target_len.unwrap_or(input.len() + 1) <= input.len() + 1);
+        debug_assert!(target_len.unwrap_or(0) <= input.len() + 1);
 
         // If we have been in this combinations of state and current character then we know that we
         // will not be able to succeed by continuing to search from here
@@ -109,6 +109,10 @@ impl Nfa {
         cannot_accept[accept_table_index] = true;
         false
     }
+
+    pub fn accept_states(&self) -> &HashSet<u16> {
+        &self.accept_states
+    }
 }
 
 impl StateMachine for Nfa {
@@ -130,6 +134,9 @@ impl StateMachine for Nfa {
     }
 
     fn trace_states_validated(&self, input: &[u16]) -> Vec<(u16, Vec<TapeMovement>)> {
+        if input.len() == 0 {
+            return add_tape_mov(vec![0], TapeMovement::Right(None));
+        }
         let mut max_len = 0;
         let mut state_trace = vec![0];
 
@@ -204,9 +211,7 @@ mod nfa_tests {
     #[test]
     fn build_nfa_large() {
         assert!(Nfa::build(
-            (0..100)
-                .map(|n| HashSet::from([(n + 1) % 10]))
-                .collect(),
+            (0..100).map(|n| HashSet::from([(n + 1) % 10])).collect(),
             HashSet::from([3]),
             9,
             9
@@ -317,9 +322,7 @@ mod nfa_tests {
     #[test]
     fn build_nfa_large_wrong_dims() {
         assert!(Nfa::build(
-            (0..100)
-                .map(|n| HashSet::from([(n + 1) % 10]))
-                .collect(),
+            (0..100).map(|n| HashSet::from([(n + 1) % 10])).collect(),
             HashSet::from([3]),
             8,
             9
@@ -327,9 +330,7 @@ mod nfa_tests {
         .is_err());
 
         assert!(Nfa::build(
-            (0..100)
-                .map(|n| HashSet::from([(n + 1) % 10]))
-                .collect(),
+            (0..100).map(|n| HashSet::from([(n + 1) % 10])).collect(),
             HashSet::from([3]),
             9,
             8
@@ -337,9 +338,7 @@ mod nfa_tests {
         .is_err());
 
         assert!(Nfa::build(
-            (0..100)
-                .map(|n| HashSet::from([(n + 1) % 10]))
-                .collect(),
+            (0..100).map(|n| HashSet::from([(n + 1) % 10])).collect(),
             HashSet::from([3]),
             8,
             8
@@ -347,9 +346,7 @@ mod nfa_tests {
         .is_err());
 
         assert!(Nfa::build(
-            (0..100)
-                .map(|n| HashSet::from([(n + 1) % 10]))
-                .collect(),
+            (0..100).map(|n| HashSet::from([(n + 1) % 10])).collect(),
             HashSet::from([3]),
             10,
             9
@@ -357,9 +354,7 @@ mod nfa_tests {
         .is_err());
 
         assert!(Nfa::build(
-            (0..100)
-                .map(|n| HashSet::from([(n + 1) % 10]))
-                .collect(),
+            (0..100).map(|n| HashSet::from([(n + 1) % 10])).collect(),
             HashSet::from([3]),
             9,
             10
@@ -442,9 +437,7 @@ mod nfa_tests {
         .is_err());
 
         assert!(Nfa::build(
-            (0..100)
-                .map(|n| HashSet::from([(n + 1) % 10]))
-                .collect(),
+            (0..100).map(|n| HashSet::from([(n + 1) % 10])).collect(),
             HashSet::from([9]),
             9,
             9
@@ -452,9 +445,7 @@ mod nfa_tests {
         .is_ok());
 
         assert!(Nfa::build(
-            (0..100)
-                .map(|n| HashSet::from([(n + 1) % 10]))
-                .collect(),
+            (0..100).map(|n| HashSet::from([(n + 1) % 10])).collect(),
             HashSet::from([9, 10]),
             9,
             9
@@ -462,9 +453,7 @@ mod nfa_tests {
         .is_err());
 
         assert!(Nfa::build(
-            (0..100)
-                .map(|n| HashSet::from([(n + 1) % 10]))
-                .collect(),
+            (0..100).map(|n| HashSet::from([(n + 1) % 10])).collect(),
             HashSet::from([11]),
             9,
             9
@@ -472,9 +461,7 @@ mod nfa_tests {
         .is_err());
 
         assert!(Nfa::build(
-            (0..100)
-                .map(|n| HashSet::from([(n + 1) % 10]))
-                .collect(),
+            (0..100).map(|n| HashSet::from([(n + 1) % 10])).collect(),
             HashSet::from_iter(100..1000),
             9,
             9
@@ -482,9 +469,7 @@ mod nfa_tests {
         .is_err());
 
         assert!(Nfa::build(
-            (0..100)
-                .map(|n| HashSet::from([(n + 1) % 10]))
-                .collect(),
+            (0..100).map(|n| HashSet::from([(n + 1) % 10])).collect(),
             HashSet::from_iter(0..20),
             19,
             4
@@ -492,9 +477,7 @@ mod nfa_tests {
         .is_ok());
 
         assert!(Nfa::build(
-            (0..100)
-                .map(|n| HashSet::from([(n + 1) % 10]))
-                .collect(),
+            (0..100).map(|n| HashSet::from([(n + 1) % 10])).collect(),
             HashSet::from([20]),
             19,
             4
@@ -502,9 +485,7 @@ mod nfa_tests {
         .is_err());
 
         assert!(Nfa::build(
-            (0..100)
-                .map(|n| HashSet::from([(n + 1) % 10]))
-                .collect(),
+            (0..100).map(|n| HashSet::from([(n + 1) % 10])).collect(),
             HashSet::from_iter((0..20).map(|n| n * 7)),
             19,
             4
@@ -515,9 +496,7 @@ mod nfa_tests {
     #[test]
     fn to_large_chars_errors() {
         let nfa = Nfa::build(
-            (0..100)
-                .map(|n| HashSet::from([(n + 1) % 10]))
-                .collect(),
+            (0..100).map(|n| HashSet::from([(n + 1) % 10])).collect(),
             HashSet::from([9]),
             9,
             9,
@@ -553,6 +532,26 @@ mod nfa_tests {
         assert!(!nfa.accepts(&[0, 0]).unwrap());
         assert!(!nfa.accepts(&[1, 1, 1, 1, 1, 0]).unwrap());
         assert!(!nfa.accepts(&[[1].repeat(1000), vec![0]].concat()).unwrap());
+    }
+    #[test]
+    fn valid_input_empty() {
+        let nfa = Nfa::build(
+            vec![
+                HashSet::from([1]),
+                HashSet::from([1]),
+                HashSet::from([1]),
+                HashSet::from([1]),
+            ],
+            HashSet::from([0]),
+            1,
+            1,
+        )
+        .unwrap();
+        assert!(nfa.accepts(&[]).is_ok());
+        assert_eq!(
+            nfa.trace_states(&[]).unwrap(),
+            vec![(0, vec![TapeMovement::Right(None)])]
+        );
     }
 
     #[test]
