@@ -1,5 +1,5 @@
 use crate::{
-    machine_utils::{add_tape_mov, table_lookup},
+    machine_utils::{add_tape_mov_stay_fir, table_lookup},
     StateMachine, TapeMovement,
 };
 use std::{cmp::max, collections::HashSet};
@@ -50,7 +50,7 @@ impl Nfa {
         let cur_state = *state_trace.last().expect(
             "state_trace should not be empty as it should always contain 0, the start state",
         );
-        let accept_table_index = table_lookup(cur_state as usize, cur_char_index, input.len() - 1);
+        let accept_table_index = table_lookup(cur_state as usize, cur_char_index, input.len());
         debug_assert_eq!(
             cannot_accept.len(),
             (input.len() + 1) * (self.max_state as usize + 1)
@@ -113,6 +113,10 @@ impl Nfa {
     pub fn accept_states(&self) -> &HashSet<u16> {
         &self.accept_states
     }
+
+    pub fn transition_table(&self) -> &[HashSet<u16>] {
+        &self.transition_table
+    }
 }
 
 impl StateMachine for Nfa {
@@ -135,7 +139,7 @@ impl StateMachine for Nfa {
 
     fn trace_states_validated(&self, input: &[u16]) -> Vec<(u16, Vec<TapeMovement>)> {
         if input.len() == 0 {
-            return add_tape_mov(vec![0], TapeMovement::Right(None));
+            return vec![(0, vec![TapeMovement::Stay(None)])];
         }
         let mut max_len = 0;
         let mut state_trace = vec![0];
@@ -156,7 +160,9 @@ impl StateMachine for Nfa {
             ))
         }
 
-        add_tape_mov(state_trace, TapeMovement::Right(None))
+        let mut trace = add_tape_mov_stay_fir(state_trace, TapeMovement::Right(None));
+        trace[0].1[0] = TapeMovement::Stay(None);
+        trace
     }
 
     fn max_state(&self) -> u16 {
@@ -171,7 +177,7 @@ impl StateMachine for Nfa {
 #[cfg(test)]
 mod nfa_tests {
 
-    use crate::machine_utils::add_tape_mov;
+    use crate::machine_utils::add_tape_mov_stay_fir;
     use crate::{StateMachine, TapeMovement};
 
     use super::Nfa;
@@ -550,7 +556,7 @@ mod nfa_tests {
         assert!(nfa.accepts(&[]).is_ok());
         assert_eq!(
             nfa.trace_states(&[]).unwrap(),
-            vec![(0, vec![TapeMovement::Right(None)])]
+            vec![(0, vec![TapeMovement::Stay(None)])]
         );
     }
 
@@ -571,20 +577,20 @@ mod nfa_tests {
 
         assert_eq!(
             nfa.trace_states(&[1, 1, 0]).unwrap(),
-            add_tape_mov(vec![0, 0, 0, 0], TapeMovement::Right(None))
+            add_tape_mov_stay_fir(vec![0, 0, 0, 0], TapeMovement::Right(None))
         );
         assert_eq!(
             nfa.trace_states(&[0, 0, 0, 0, 1]).unwrap(),
-            add_tape_mov(vec![0, 0, 0, 0, 0, 1], TapeMovement::Right(None))
+            add_tape_mov_stay_fir(vec![0, 0, 0, 0, 0, 1], TapeMovement::Right(None))
         );
         assert_eq!(
             nfa.trace_states(&[1]).unwrap(),
-            add_tape_mov(vec![0, 1], TapeMovement::Right(None))
+            add_tape_mov_stay_fir(vec![0, 1], TapeMovement::Right(None))
         );
         assert_eq!(
             nfa.trace_states(&[[0].repeat(1000), vec![1]].concat())
                 .unwrap(),
-            add_tape_mov(
+            add_tape_mov_stay_fir(
                 [[0].repeat(1001), vec![1]].concat(),
                 TapeMovement::Right(None)
             )
@@ -592,24 +598,24 @@ mod nfa_tests {
 
         assert_eq!(
             nfa.trace_states(&[0, 1, 0]).unwrap(),
-            add_tape_mov(vec![0, 0, 0, 0], TapeMovement::Right(None))
+            add_tape_mov_stay_fir(vec![0, 0, 0, 0], TapeMovement::Right(None))
         );
         assert_eq!(
             nfa.trace_states(&[0, 0]).unwrap(),
-            add_tape_mov(vec![0, 0, 0], TapeMovement::Right(None))
+            add_tape_mov_stay_fir(vec![0, 0, 0], TapeMovement::Right(None))
         );
         assert_eq!(
             nfa.trace_states(&[1, 1, 1, 1, 1, 0]).unwrap(),
-            add_tape_mov(vec![0, 0, 0, 0, 0, 0, 0], TapeMovement::Right(None))
+            add_tape_mov_stay_fir(vec![0, 0, 0, 0, 0, 0, 0], TapeMovement::Right(None))
         );
         assert_eq!(
             nfa.trace_states(&[[1].repeat(1000), vec![0]].concat())
                 .unwrap(),
-            add_tape_mov([0].repeat(1002), TapeMovement::Right(None))
+            add_tape_mov_stay_fir([0].repeat(1002), TapeMovement::Right(None))
         );
         assert_eq!(
             nfa.trace_states(&[0, 1, 1]).unwrap(),
-            add_tape_mov(vec![0, 0, 0, 1], TapeMovement::Right(None))
+            add_tape_mov_stay_fir(vec![0, 0, 0, 1], TapeMovement::Right(None))
         );
     }
 
@@ -649,48 +655,48 @@ mod nfa_tests {
         assert!(nfa.accepts(&[0, 0, 0, 1, 0, 1]).unwrap());
         assert_eq!(
             nfa.trace_states(&[0, 0, 0, 1, 0, 1]).unwrap(),
-            add_tape_mov(vec![0, 0, 0, 0, 1, 3, 4], TapeMovement::Right(None))
+            add_tape_mov_stay_fir(vec![0, 0, 0, 0, 1, 3, 4], TapeMovement::Right(None))
         );
 
         assert!(nfa.accepts(&[0, 0, 2, 0, 1]).unwrap());
         assert_eq!(
             nfa.trace_states(&[0, 0, 2, 0, 1]).unwrap(),
-            add_tape_mov(vec![0, 0, 0, 2, 3, 4], TapeMovement::Right(None))
+            add_tape_mov_stay_fir(vec![0, 0, 0, 2, 3, 4], TapeMovement::Right(None))
         );
 
         assert!(nfa.accepts(&[1, 0, 1]).unwrap());
         assert_eq!(
             nfa.trace_states(&[1, 0, 1]).unwrap(),
-            add_tape_mov(vec![0, 1, 3, 4], TapeMovement::Right(None))
+            add_tape_mov_stay_fir(vec![0, 1, 3, 4], TapeMovement::Right(None))
         );
 
         assert!(nfa.accepts(&[2, 0, 1]).unwrap());
         assert_eq!(
             nfa.trace_states(&[2, 0, 1]).unwrap(),
-            add_tape_mov(vec![0, 2, 3, 4], TapeMovement::Right(None))
+            add_tape_mov_stay_fir(vec![0, 2, 3, 4], TapeMovement::Right(None))
         );
 
         assert!(nfa.accepts(&[0, 2, 0, 1]).unwrap());
         assert_eq!(
             nfa.trace_states(&[0, 2, 0, 1]).unwrap(),
-            add_tape_mov(vec![0, 0, 2, 3, 4], TapeMovement::Right(None))
+            add_tape_mov_stay_fir(vec![0, 0, 2, 3, 4], TapeMovement::Right(None))
         );
         assert!(nfa.accepts(&[0, 0, 0, 2, 2, 0, 1]).unwrap());
         assert_eq!(
             nfa.trace_states(&[0, 0, 0, 2, 2, 0, 1]).unwrap(),
-            add_tape_mov(vec![0, 0, 0, 0, 2, 2, 3, 4], TapeMovement::Right(None))
+            add_tape_mov_stay_fir(vec![0, 0, 0, 0, 2, 2, 3, 4], TapeMovement::Right(None))
         );
 
         assert!(nfa.accepts(&[0, 1, 1, 0, 1]).unwrap());
         assert_eq!(
             nfa.trace_states(&[0, 1, 1, 0, 1]).unwrap(),
-            add_tape_mov(vec![0, 0, 1, 1, 3, 4], TapeMovement::Right(None))
+            add_tape_mov_stay_fir(vec![0, 0, 1, 1, 3, 4], TapeMovement::Right(None))
         );
 
         assert!(nfa.accepts(&[0, 0, 0, 1, 1, 0, 1]).unwrap());
         assert_eq!(
             nfa.trace_states(&[0, 0, 0, 1, 1, 0, 1]).unwrap(),
-            add_tape_mov(vec![0, 0, 0, 0, 1, 1, 3, 4], TapeMovement::Right(None))
+            add_tape_mov_stay_fir(vec![0, 0, 0, 0, 1, 1, 3, 4], TapeMovement::Right(None))
         );
     }
 
@@ -748,17 +754,17 @@ mod nfa_tests {
         assert!(nfa.accepts(&[0, 1, 2]).unwrap());
         assert_eq!(
             nfa.trace_states(&[0, 1, 2]).unwrap(),
-            add_tape_mov(vec![0, 1, 2, 3], TapeMovement::Right(None))
+            add_tape_mov_stay_fir(vec![0, 1, 2, 3], TapeMovement::Right(None))
         );
         assert!(nfa.accepts(&[0, 1, 2, 3]).unwrap());
         assert_eq!(
             nfa.trace_states(&[0, 1, 2, 3]).unwrap(),
-            add_tape_mov(vec![0, 4, 5, 6, 7], TapeMovement::Right(None))
+            add_tape_mov_stay_fir(vec![0, 4, 5, 6, 7], TapeMovement::Right(None))
         );
         assert!(!nfa.accepts(&[0, 1, 2, 3, 3]).unwrap());
         assert_eq!(
             nfa.trace_states(&[0, 1, 2, 3, 3]).unwrap(),
-            add_tape_mov(vec![0, 4, 5, 6, 7], TapeMovement::Right(None))
+            add_tape_mov_stay_fir(vec![0, 4, 5, 6, 7], TapeMovement::Right(None))
         );
     }
 }

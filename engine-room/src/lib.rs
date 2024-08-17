@@ -71,7 +71,7 @@ pub trait StateMachine {
 /// // Move the tape to the right without writing any symbol
 /// let move_right_no_write = TapeMovement::Right(None);
 /// ```
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum TapeMovement {
     Right(Option<u16>),
     Left(Option<u16>),
