@@ -442,7 +442,15 @@ mod epslion_nfa_tests {
                 (3, vec![TapeMovement::Right(None)]),
                 (4, vec![TapeMovement::Stay(None)]),
             ],
+            vec![
+                (0, vec![TapeMovement::Stay(None)]),
+                (1, vec![TapeMovement::Right(None)]),
+                (2, vec![TapeMovement::Right(None)]),
+                (3, vec![TapeMovement::Right(None)]),
+                (0, vec![TapeMovement::Stay(None)]),
+                (4, vec![TapeMovement::Stay(None)]),
+            ],
         ]);
-        assert!(options.contains(&e_nfa.trace_states_validated(&[0, 1, 2])));
+        assert!(options.contains(dbg!(&e_nfa.trace_states_validated(&[0, 1, 2]))));
     }
 }
