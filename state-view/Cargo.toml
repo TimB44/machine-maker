@@ -1,0 +1,7 @@
+[package]
+name = "state-view"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+engine-room = {path = "../engine-room"}

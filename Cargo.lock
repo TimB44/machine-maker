@@ -5,3 +5,10 @@ version = 3
 [[package]]
 name = "engine-room"
 version = "0.1.0"
+
+[[package]]
+name = "state-view"
+version = "0.1.0"
+dependencies = [
+ "engine-room",
+]
