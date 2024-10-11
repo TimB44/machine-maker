@@ -1,9 +1,12 @@
+use dfa::Dfa;
+use e_nfa::EpsilonNfa;
 use machine_utils::validate_input;
+use nfa::Nfa;
 
 pub mod dfa;
+pub mod e_nfa;
 pub mod multi_tm;
 pub mod nfa;
-pub mod nfa_e;
 pub mod pda;
 pub mod stay_tm;
 pub mod tm;
@@ -42,6 +45,47 @@ pub trait StateMachine {
 
     /// Returns the largest input in this machine
     fn max_input(&self) -> u16;
+}
+
+#[derive(Debug, Clone)]
+pub enum Machine {
+    Dfa(Dfa),
+    Nfa(Nfa),
+    EpsilonNfa(EpsilonNfa),
+}
+
+impl StateMachine for Machine {
+    fn accepts_validated(&self, input: &[u16]) -> bool {
+        match self {
+            Machine::Dfa(dfa) => dfa.accepts_validated(input),
+            Machine::Nfa(nfa) => nfa.accepts_validated(input),
+            Machine::EpsilonNfa(enfa) => enfa.accepts_validated(input),
+        }
+    }
+
+    fn trace_states_validated(&self, input: &[u16]) -> Vec<(u16, Vec<TapeMovement>)> {
+        match self {
+            Machine::Dfa(dfa) => dfa.trace_states_validated(input),
+            Machine::Nfa(nfa) => nfa.trace_states_validated(input),
+            Machine::EpsilonNfa(enfa) => enfa.trace_states_validated(input),
+        }
+    }
+
+    fn max_state(&self) -> u16 {
+        match self {
+            Machine::Dfa(dfa) => dfa.max_state(),
+            Machine::Nfa(nfa) => nfa.max_state(),
+            Machine::EpsilonNfa(enfa) => enfa.max_state(),
+        }
+    }
+
+    fn max_input(&self) -> u16 {
+        match self {
+            Machine::Dfa(dfa) => dfa.max_input(),
+            Machine::Nfa(nfa) => nfa.max_input(),
+            Machine::EpsilonNfa(enfa) => enfa.max_input(),
+        }
+    }
 }
 
 /// # Tape Movement

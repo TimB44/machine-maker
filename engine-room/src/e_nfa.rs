@@ -5,6 +5,7 @@ use std::{
 
 use crate::{machine_utils::table_lookup, nfa::Nfa, StateMachine, TapeMovement};
 
+#[derive(Debug, Clone)]
 pub struct EpsilonNfa {
     nfa: Nfa,
     transition_table: Vec<HashSet<u16>>,
@@ -142,8 +143,6 @@ impl EpsilonNfa {
         for (index, set) in nfa_transition_table.iter_mut().enumerate() {
             let cur_state = index / (max_char as usize + 1);
             let cur_char = index % (max_char as usize + 1);
-            dbg!(max_char);
-            dbg!((index, cur_state, cur_char));
 
             let can_reach: HashSet<u16> = epsilon_closure_paths[cur_state]
                 .keys()
@@ -187,8 +186,7 @@ impl StateMachine for EpsilonNfa {
 
         // This state trace will tranition between states that require an epsilon trasition to
         // happen in the EpsilonNfa.
-        let mut e_nfa_state_trace: Vec<(u16, Vec<TapeMovement>)> =
-            Vec::with_capacity(nfa_state_trace.len());
+        let mut e_nfa_state_trace = Vec::with_capacity(nfa_state_trace.len());
         let mut nfa_iter = nfa_state_trace.into_iter();
         let mut prev_trace = nfa_iter
             .next()
@@ -206,6 +204,7 @@ impl StateMachine for EpsilonNfa {
 
             // If this transition existis in the EpsilonNfa then we can move on
             if cur_neighbors.contains(&dest_state) {
+                eprintln!("Skiped, {:?}", dest_state);
                 e_nfa_state_trace.push((dest_state, vec![TapeMovement::Right(None)]));
                 prev_trace = cur_trace;
                 continue;
@@ -251,15 +250,14 @@ impl StateMachine for EpsilonNfa {
                 self.epslion_closure_paths[src_state as usize][&mid_point_1]
                     .iter()
                     .skip(1)
-                    .chain(self.epslion_closure_paths[mid_point_2 as usize][&dest_state].iter())
-                    .copied()
-                    .map(|s| {
-                        if s == mid_point_2 {
-                            (s, vec![TapeMovement::Right(None)])
-                        } else {
-                            (s, vec![TapeMovement::Stay(None)])
-                        }
-                    }),
+                    .map(|&s| (s, vec![TapeMovement::Stay(None)]))
+                    .chain([(mid_point_2, vec![TapeMovement::Right(None)])].into_iter())
+                    .chain(
+                        self.epslion_closure_paths[mid_point_2 as usize][&dest_state]
+                            .iter()
+                            .map(|&s| (s, vec![TapeMovement::Stay(None)]))
+                            .skip(1),
+                    ),
             );
             prev_trace = cur_trace;
         }
@@ -314,6 +312,9 @@ mod epslion_nfa_tests {
     }
 
     #[test]
+    fn doulbe_epsilon_trasition() {}
+
+    #[test]
     // Thie State Machine accepts 0∑*1*
     fn small_nfa() {
         let transition_table = vec![
@@ -355,6 +356,7 @@ mod epslion_nfa_tests {
                 (2, vec![TapeMovement::Right(None)]),
             ],
         ]);
+        //TODO fix bug in this test
         let path = e_nfa.trace_states_validated(&[0, 1]);
         assert!(
             possibilities.contains(&path),
@@ -451,6 +453,6 @@ mod epslion_nfa_tests {
                 (4, vec![TapeMovement::Stay(None)]),
             ],
         ]);
-        assert!(options.contains(dbg!(&e_nfa.trace_states_validated(&[0, 1, 2]))));
+        assert!(options.contains(&e_nfa.trace_states_validated(&[0, 1, 2])));
     }
 }

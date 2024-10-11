@@ -3,6 +3,8 @@ use crate::{
     StateMachine, TapeMovement,
 };
 use std::collections::HashSet;
+
+#[derive(Debug, Clone)]
 pub struct Dfa {
     transition_table: Vec<u16>,
     accept_states: HashSet<u16>,

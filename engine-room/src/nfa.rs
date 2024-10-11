@@ -4,6 +4,7 @@ use crate::{
 };
 use std::{cmp::max, collections::HashSet};
 
+#[derive(Debug, Clone)]
 pub struct Nfa {
     transition_table: Vec<HashSet<u16>>,
     accept_states: HashSet<u16>,
