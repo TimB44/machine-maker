@@ -32,6 +32,18 @@ impl Viewer {
             state_pos,
         }
     }
+
+    pub fn move_state(&mut self, state: u16, new_pos: Point) {
+        self.state_pos[state as usize] = new_pos;
+    }
+
+    pub fn modify_edge_visuals(&mut self, edge_num: u16, new_visuals: VisualEdge) {
+        self.edges[edge_num as usize].1 = new_visuals
+    }
+
+    pub fn add_state(self) -> Self {
+        todo!()
+    }
 }
 
 pub trait Visual: StateMachine {

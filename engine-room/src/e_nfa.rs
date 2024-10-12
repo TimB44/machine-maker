@@ -3,7 +3,7 @@ use std::{
     iter::repeat,
 };
 
-use crate::{machine_utils::table_lookup, nfa::Nfa, StateMachine, TapeMovement};
+use crate::{machine_utils::table_lookup, nfa::Nfa, BuildError, StateMachine, TapeMovement};
 
 #[derive(Debug, Clone)]
 pub struct EpsilonNfa {
@@ -11,6 +11,25 @@ pub struct EpsilonNfa {
     transition_table: Vec<HashSet<u16>>,
     accept_states: HashSet<u16>,
     epslion_closure_paths: Vec<HashMap<u16, Vec<u16>>>,
+}
+
+#[derive(Debug, Clone)]
+pub struct EpsilonNfaBuilder {}
+
+//TODO:
+impl From<EpsilonNfa> for EpsilonNfaBuilder {
+    fn from(value: EpsilonNfa) -> Self {
+        todo!()
+    }
+}
+
+//TODO:
+impl TryInto<EpsilonNfa> for EpsilonNfaBuilder {
+    type Error = BuildError;
+
+    fn try_into(self) -> Result<EpsilonNfa, Self::Error> {
+        todo!()
+    }
 }
 
 impl EpsilonNfa {

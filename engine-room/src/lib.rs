@@ -1,7 +1,7 @@
-use dfa::Dfa;
-use e_nfa::EpsilonNfa;
+use dfa::{Dfa, DfaBuilder};
+use e_nfa::{EpsilonNfa, EpsilonNfaBuilder};
 use machine_utils::validate_input;
-use nfa::Nfa;
+use nfa::{Nfa, NfaBuilder};
 
 pub mod dfa;
 pub mod e_nfa;
@@ -88,6 +88,47 @@ impl StateMachine for Machine {
     }
 }
 
+pub trait StateMachineBuilder {
+    fn add_state() -> u16;
+    //TODO: figure out error
+    fn remove_state(state: u16) -> Result<(), ()>;
+    fn set_transition(state: u16, transition: Transition) -> Result<(), ()>;
+    fn remove_edge(state: u16, transition: Transition) -> Result<(), ()>;
+    fn set_start_state(new_start_state: u16) -> Result<u16, ()>;
+}
+
+pub enum MachineBuiler {
+    DfaBuilder(DfaBuilder),
+    NfaBuilder(NfaBuilder),
+    EpsilonNfaBuilder(EpsilonNfaBuilder),
+}
+
+impl From<Machine> for MachineBuiler {
+    fn from(value: Machine) -> Self {
+        match value {
+            Machine::Dfa(dfa) => MachineBuiler::DfaBuilder(dfa.into()),
+            Machine::Nfa(nfa) => Self::NfaBuilder(nfa.into()),
+            Machine::EpsilonNfa(enfa) => Self::EpsilonNfaBuilder(enfa.into()),
+        }
+    }
+}
+
+impl TryInto<Machine> for MachineBuiler {
+    type Error = BuildError;
+
+    fn try_into(self) -> Result<Machine, Self::Error> {
+        match self {
+            MachineBuiler::DfaBuilder(dfa_builder) => Ok(Machine::Dfa(dfa_builder.try_into()?)),
+            MachineBuiler::NfaBuilder(nfa_builder) => Ok(Machine::Nfa(nfa_builder.try_into()?)),
+            MachineBuiler::EpsilonNfaBuilder(enfa_builder) => {
+                Ok(Machine::EpsilonNfa(enfa_builder.try_into()?))
+            }
+        }
+    }
+}
+
+pub enum BuildError {}
+
 /// # Tape Movement
 ///
 /// This enum defines the possible movements of a tape in a general state machine.
@@ -121,3 +162,6 @@ pub enum TapeMovement {
     Left(Option<u16>),
     Stay(Option<u16>),
 }
+
+//TODO: fille this out should contain info needed to insert a transition into the machine
+pub enum Transition {}

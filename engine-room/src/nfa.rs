@@ -1,6 +1,6 @@
 use crate::{
     machine_utils::{add_tape_mov_stay_fir, table_lookup},
-    StateMachine, TapeMovement,
+    BuildError, StateMachine, TapeMovement,
 };
 use std::{cmp::max, collections::HashSet};
 
@@ -10,6 +10,25 @@ pub struct Nfa {
     accept_states: HashSet<u16>,
     max_state: u16,
     max_char: u16,
+}
+
+//TODO: create
+#[derive(Debug, Clone)]
+pub struct NfaBuilder {}
+
+//TODO:
+impl From<Nfa> for NfaBuilder {
+    fn from(value: Nfa) -> Self {
+        todo!()
+    }
+}
+//TODO:
+impl TryInto<Nfa> for NfaBuilder {
+    type Error = BuildError;
+
+    fn try_into(self) -> Result<Nfa, Self::Error> {
+        todo!()
+    }
 }
 
 impl Nfa {
