@@ -1,7 +1,4 @@
-use dfa::{Dfa, DfaBuilder};
-use e_nfa::{EpsilonNfa, EpsilonNfaBuilder};
 use machine_utils::validate_input;
-use nfa::{Nfa, NfaBuilder};
 
 pub mod dfa;
 pub mod e_nfa;
@@ -10,6 +7,7 @@ pub mod nfa;
 pub mod pda;
 pub mod stay_tm;
 pub mod tm;
+pub mod transitions;
 
 mod machine_utils;
 
@@ -26,7 +24,7 @@ mod machine_utils;
 pub trait StateMachine {
     /// Checks if the state machine accepts the given input.
     fn accepts(&self, input: &[u16]) -> Result<bool, ()> {
-        validate_input(input, self.max_input())?;
+        validate_input(input, self.chars())?;
         Ok(self.accepts_validated(input))
     }
     /// Checks if the state machine accepts the given input.
@@ -34,100 +32,41 @@ pub trait StateMachine {
 
     /// Traces the states and movements of the state machine for the given input.
     fn trace_states(&self, input: &[u16]) -> Result<Vec<(u16, Vec<TapeMovement>)>, ()> {
-        validate_input(input, self.max_input())?;
+        validate_input(input, self.chars())?;
         Ok(self.trace_states_validated(input))
     }
     /// Traces the states and movements of the state machine for the given input.
     fn trace_states_validated(&self, input: &[u16]) -> Vec<(u16, Vec<TapeMovement>)>;
 
     /// Returns the largest state in this machine
-    fn max_state(&self) -> u16;
+    fn states(&self) -> u16;
 
     /// Returns the largest input in this machine
-    fn max_input(&self) -> u16;
+    fn chars(&self) -> u16;
 }
 
-#[derive(Debug, Clone)]
-pub enum Machine {
-    Dfa(Dfa),
-    Nfa(Nfa),
-    EpsilonNfa(EpsilonNfa),
+//TODO: figure out error
+pub trait StateMachineBuilder
+where
+    Self: From<Self::Machine>,
+    Self::Machine: TryFrom<Self>,
+{
+    type Trasition;
+    type Machine;
+    type Error;
+
+    fn add_state(&mut self) -> u16;
+    fn remove_state(&mut self, state: u16) -> Result<Option<u16>, Self::Error>;
+
+    fn set_transition(&mut self, transition: Self::Trasition) -> Result<(), Self::Error>;
+    fn set_start_state(&mut self, new_start_state: u16) -> Result<(), Self::Error>;
+
+    fn add_start_state(&mut self, state: u16) -> Result<bool, Self::Error>;
+    fn remove_start_state(&mut self, state: u16) -> Result<bool, Self::Error>;
+
+    fn add_char(&mut self);
+    fn remove_char(&mut self, char: u16) -> Result<Self::Error, ()>;
 }
-
-impl StateMachine for Machine {
-    fn accepts_validated(&self, input: &[u16]) -> bool {
-        match self {
-            Machine::Dfa(dfa) => dfa.accepts_validated(input),
-            Machine::Nfa(nfa) => nfa.accepts_validated(input),
-            Machine::EpsilonNfa(enfa) => enfa.accepts_validated(input),
-        }
-    }
-
-    fn trace_states_validated(&self, input: &[u16]) -> Vec<(u16, Vec<TapeMovement>)> {
-        match self {
-            Machine::Dfa(dfa) => dfa.trace_states_validated(input),
-            Machine::Nfa(nfa) => nfa.trace_states_validated(input),
-            Machine::EpsilonNfa(enfa) => enfa.trace_states_validated(input),
-        }
-    }
-
-    fn max_state(&self) -> u16 {
-        match self {
-            Machine::Dfa(dfa) => dfa.max_state(),
-            Machine::Nfa(nfa) => nfa.max_state(),
-            Machine::EpsilonNfa(enfa) => enfa.max_state(),
-        }
-    }
-
-    fn max_input(&self) -> u16 {
-        match self {
-            Machine::Dfa(dfa) => dfa.max_input(),
-            Machine::Nfa(nfa) => nfa.max_input(),
-            Machine::EpsilonNfa(enfa) => enfa.max_input(),
-        }
-    }
-}
-
-pub trait StateMachineBuilder {
-    fn add_state() -> u16;
-    //TODO: figure out error
-    fn remove_state(state: u16) -> Result<(), ()>;
-    fn set_transition(state: u16, transition: Transition) -> Result<(), ()>;
-    fn remove_edge(state: u16, transition: Transition) -> Result<(), ()>;
-    fn set_start_state(new_start_state: u16) -> Result<u16, ()>;
-}
-
-pub enum MachineBuiler {
-    DfaBuilder(DfaBuilder),
-    NfaBuilder(NfaBuilder),
-    EpsilonNfaBuilder(EpsilonNfaBuilder),
-}
-
-impl From<Machine> for MachineBuiler {
-    fn from(value: Machine) -> Self {
-        match value {
-            Machine::Dfa(dfa) => MachineBuiler::DfaBuilder(dfa.into()),
-            Machine::Nfa(nfa) => Self::NfaBuilder(nfa.into()),
-            Machine::EpsilonNfa(enfa) => Self::EpsilonNfaBuilder(enfa.into()),
-        }
-    }
-}
-
-impl TryInto<Machine> for MachineBuiler {
-    type Error = BuildError;
-
-    fn try_into(self) -> Result<Machine, Self::Error> {
-        match self {
-            MachineBuiler::DfaBuilder(dfa_builder) => Ok(Machine::Dfa(dfa_builder.try_into()?)),
-            MachineBuiler::NfaBuilder(nfa_builder) => Ok(Machine::Nfa(nfa_builder.try_into()?)),
-            MachineBuiler::EpsilonNfaBuilder(enfa_builder) => {
-                Ok(Machine::EpsilonNfa(enfa_builder.try_into()?))
-            }
-        }
-    }
-}
-
-pub enum BuildError {}
 
 /// # Tape Movement
 ///
@@ -163,5 +102,8 @@ pub enum TapeMovement {
     Stay(Option<u16>),
 }
 
-//TODO: fille this out should contain info needed to insert a transition into the machine
-pub enum Transition {}
+//TODO: fill this out should contain info needed to insert a transition into the machine
+pub enum Transition {
+    SingleChar { start: u16, end: u16, char: u16 },
+    Other,
+}

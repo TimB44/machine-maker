@@ -185,11 +185,11 @@ impl StateMachine for Nfa {
         trace
     }
 
-    fn max_state(&self) -> u16 {
+    fn states(&self) -> u16 {
         self.max_state
     }
 
-    fn max_input(&self) -> u16 {
+    fn chars(&self) -> u16 {
         self.max_char
     }
 }

@@ -9,9 +9,10 @@ pub(crate) fn validate_input(input: &[u16], max_char: u16) -> Result<(), ()> {
     Ok(())
 }
 
-pub(crate) fn table_lookup(cur_state: usize, cur_char: usize, max_char: usize) -> usize {
-    debug_assert!(cur_char <= max_char);
-    cur_state * (max_char + 1) + cur_char
+//TODO: refator to use chars instad of max_char
+pub(crate) fn table_lookup(cur_state: usize, cur_char: usize, chars: usize) -> usize {
+    debug_assert!(cur_char < chars);
+    cur_state * chars + cur_char
 }
 
 pub(crate) fn add_tape_mov(

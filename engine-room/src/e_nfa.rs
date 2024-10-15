@@ -218,7 +218,7 @@ impl StateMachine for EpsilonNfa {
             let cur_neighbors = &self.transition_table[table_lookup(
                 src_state as usize,
                 cur_char as usize,
-                self.nfa.max_input() as usize + 1,
+                self.nfa.chars() as usize + 1,
             )];
 
             // If this transition existis in the EpsilonNfa then we can move on
@@ -246,7 +246,7 @@ impl StateMachine for EpsilonNfa {
                     self.transition_table[table_lookup(
                         s as usize,
                         cur_char as usize,
-                        self.nfa.max_input() as usize + 1,
+                        self.nfa.chars() as usize + 1,
                     )]
                     .iter()
                     .copied(),
@@ -301,12 +301,12 @@ impl StateMachine for EpsilonNfa {
         e_nfa_state_trace
     }
 
-    fn max_state(&self) -> u16 {
-        self.nfa.max_state()
+    fn states(&self) -> u16 {
+        self.nfa.states()
     }
 
-    fn max_input(&self) -> u16 {
-        self.nfa.max_input()
+    fn chars(&self) -> u16 {
+        self.nfa.chars()
     }
 }
 #[cfg(test)]
