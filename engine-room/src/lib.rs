@@ -45,7 +45,6 @@ pub trait StateMachine {
     fn chars(&self) -> u16;
 }
 
-//TODO: figure out error
 pub trait StateMachineBuilder
 where
     Self: From<Self::Machine>,
@@ -59,10 +58,11 @@ where
     fn remove_state(&mut self, state: u16) -> Result<Option<u16>, Self::Error>;
 
     fn set_transition(&mut self, transition: Self::Trasition) -> Result<(), Self::Error>;
+
     fn set_start_state(&mut self, new_start_state: u16) -> Result<(), Self::Error>;
 
-    fn add_start_state(&mut self, state: u16) -> Result<bool, Self::Error>;
-    fn remove_start_state(&mut self, state: u16) -> Result<bool, Self::Error>;
+    fn add_accept_state(&mut self, state: u16) -> Result<bool, Self::Error>;
+    fn remove_accept_state(&mut self, state: u16) -> Result<bool, Self::Error>;
 
     fn add_char(&mut self);
     fn remove_char(&mut self, char: u16) -> Result<Self::Error, ()>;
@@ -102,8 +102,8 @@ pub enum TapeMovement {
     Stay(Option<u16>),
 }
 
-//TODO: fill this out should contain info needed to insert a transition into the machine
-pub enum Transition {
-    SingleChar { start: u16, end: u16, char: u16 },
-    Other,
+pub trait LogicalEdge {
+    fn to_string(&self) -> String;
+    fn input_count() -> usize;
+    fn input_labels() -> &'static Vec<&'static str>;
 }

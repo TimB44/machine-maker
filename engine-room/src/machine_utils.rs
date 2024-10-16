@@ -2,8 +2,8 @@ use crate::TapeMovement;
 use std::iter;
 
 // TODO: Add better error type
-pub(crate) fn validate_input(input: &[u16], max_char: u16) -> Result<(), ()> {
-    if input.iter().any(|c| c > &max_char) {
+pub(crate) fn validate_input(input: &[u16], chars: u16) -> Result<(), ()> {
+    if input.iter().any(|&c| c >= chars) {
         return Err(());
     }
     Ok(())

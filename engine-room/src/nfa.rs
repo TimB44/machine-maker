@@ -1,6 +1,7 @@
 use crate::{
     machine_utils::{add_tape_mov_stay_fir, table_lookup},
-    BuildError, StateMachine, TapeMovement,
+    transitions::SingleChar,
+    StateMachine, StateMachineBuilder, TapeMovement,
 };
 use std::{cmp::max, collections::HashSet};
 
@@ -8,13 +9,59 @@ use std::{cmp::max, collections::HashSet};
 pub struct Nfa {
     transition_table: Vec<HashSet<u16>>,
     accept_states: HashSet<u16>,
-    max_state: u16,
-    max_char: u16,
+    //TODO:
+    states: u16,
+    chars: u16,
 }
 
 //TODO: create
 #[derive(Debug, Clone)]
-pub struct NfaBuilder {}
+pub struct NfaBuilder {
+    transition_table: Vec<HashSet<u16>>,
+    accept_states: HashSet<u16>,
+    max_state: u16,
+    max_char: u16,
+}
+
+impl StateMachineBuilder for NfaBuilder {
+    type Trasition = SingleChar;
+
+    type Machine = Nfa;
+
+    type Error = ();
+
+    fn add_state(&mut self) -> u16 {
+        todo!()
+    }
+
+    fn remove_state(&mut self, state: u16) -> Result<Option<u16>, Self::Error> {
+        todo!()
+    }
+
+    fn set_transition(&mut self, transition: Self::Trasition) -> Result<(), Self::Error> {
+        todo!()
+    }
+
+    fn set_start_state(&mut self, new_start_state: u16) -> Result<(), Self::Error> {
+        todo!()
+    }
+
+    fn add_accept_state(&mut self, state: u16) -> Result<bool, Self::Error> {
+        todo!()
+    }
+
+    fn remove_accept_state(&mut self, state: u16) -> Result<bool, Self::Error> {
+        todo!()
+    }
+
+    fn add_char(&mut self) {
+        todo!()
+    }
+
+    fn remove_char(&mut self, char: u16) -> Result<Self::Error, ()> {
+        todo!()
+    }
+}
 
 //TODO:
 impl From<Nfa> for NfaBuilder {
@@ -22,11 +69,10 @@ impl From<Nfa> for NfaBuilder {
         todo!()
     }
 }
-//TODO:
-impl TryInto<Nfa> for NfaBuilder {
-    type Error = BuildError;
+impl TryFrom<NfaBuilder> for Nfa {
+    type Error = ();
 
-    fn try_into(self) -> Result<Nfa, Self::Error> {
+    fn try_from(value: NfaBuilder) -> Result<Self, Self::Error> {
         todo!()
     }
 }
@@ -35,17 +81,21 @@ impl Nfa {
     pub fn build(
         transition_table: Vec<HashSet<u16>>,
         accept_states: HashSet<u16>,
-        max_state: u16,
-        max_char: u16,
+        states: u16,
+        chars: u16,
     ) -> Result<Nfa, ()> {
-        if transition_table.len() != ((max_state + 1) * (max_char + 1)) as usize {
+        if states == 0 || chars == 0 {
             return Err(());
         }
+        if transition_table.len() != (states * chars) as usize {
+            return Err(());
+        }
+
         if transition_table
             .iter()
             .flatten()
             .chain(accept_states.iter())
-            .any(|item| item > &max_state)
+            .any(|&item| item >= states)
         {
             return Err(());
         }
@@ -53,8 +103,8 @@ impl Nfa {
         Ok(Nfa {
             transition_table,
             accept_states,
-            max_state,
-            max_char,
+            states,
+            chars,
         })
     }
 
@@ -73,7 +123,7 @@ impl Nfa {
         let accept_table_index = table_lookup(cur_state as usize, cur_char_index, input.len());
         debug_assert_eq!(
             cannot_accept.len(),
-            (input.len() + 1) * (self.max_state as usize + 1)
+            (input.len() + 1) * self.states as usize
         );
         debug_assert!(cur_char_index <= input.len());
         debug_assert!(target_len.unwrap_or(0) <= input.len() + 1);
@@ -106,7 +156,7 @@ impl Nfa {
         let transition_table_index = table_lookup(
             cur_state as usize,
             input[cur_char_index] as usize,
-            self.max_char as usize,
+            self.chars as usize,
         );
         for next_state in self.transition_table[transition_table_index]
             .iter()
@@ -148,7 +198,7 @@ impl StateMachine for Nfa {
             for state in cur_states {
                 next_states.extend(
                     &self.transition_table
-                        [table_lookup(state as usize, *c as usize, self.max_char as usize)],
+                        [table_lookup(state as usize, *c as usize, self.chars as usize)],
                 )
             }
             cur_states = next_states;
@@ -165,14 +215,14 @@ impl StateMachine for Nfa {
         let mut state_trace = vec![0];
 
         if !self.search_for_state_path(
-            &mut vec![false; (input.len() + 1) * (self.max_state as usize + 1)],
+            &mut vec![false; (input.len() + 1) * (self.states as usize + 1)],
             input,
             &mut state_trace,
             &mut max_len,
             None,
         ) {
             debug_assert!(self.search_for_state_path(
-                &mut vec![false; (input.len() + 1) * (self.max_state as usize + 1)],
+                &mut vec![false; (input.len() + 1) * (self.states as usize + 1)],
                 input,
                 &mut state_trace,
                 &mut 1,
@@ -186,11 +236,11 @@ impl StateMachine for Nfa {
     }
 
     fn states(&self) -> u16 {
-        self.max_state
+        self.states
     }
 
     fn chars(&self) -> u16 {
-        self.max_char
+        self.chars
     }
 }
 

@@ -3,7 +3,7 @@ use std::{
     iter::repeat,
 };
 
-use crate::{machine_utils::table_lookup, nfa::Nfa, BuildError, StateMachine, TapeMovement};
+use crate::{machine_utils::table_lookup, nfa::Nfa, StateMachine, TapeMovement};
 
 #[derive(Debug, Clone)]
 pub struct EpsilonNfa {
@@ -25,7 +25,7 @@ impl From<EpsilonNfa> for EpsilonNfaBuilder {
 
 //TODO:
 impl TryInto<EpsilonNfa> for EpsilonNfaBuilder {
-    type Error = BuildError;
+    type Error = ();
 
     fn try_into(self) -> Result<EpsilonNfa, Self::Error> {
         todo!()
