@@ -120,7 +120,7 @@ impl Nfa {
         let cur_state = *state_trace.last().expect(
             "state_trace should not be empty as it should always contain 0, the start state",
         );
-        let accept_table_index = table_lookup(cur_state as usize, cur_char_index, input.len());
+        let accept_table_index = table_lookup(cur_state as usize, cur_char_index, input.len() + 1);
         debug_assert_eq!(
             cannot_accept.len(),
             (input.len() + 1) * self.states as usize

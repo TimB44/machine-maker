@@ -11,7 +11,7 @@ pub(crate) fn validate_input(input: &[u16], chars: u16) -> Result<(), ()> {
 
 //TODO: refator to use chars instad of max_char
 pub(crate) fn table_lookup(cur_state: usize, cur_char: usize, chars: usize) -> usize {
-    debug_assert!(cur_char < chars);
+    debug_assert!(cur_char < chars, "cur_char: {cur_char} >= chars: {chars}");
     cur_state * chars + cur_char
 }
 
