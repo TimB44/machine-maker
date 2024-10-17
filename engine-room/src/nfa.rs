@@ -840,4 +840,66 @@ mod nfa_tests {
             add_tape_mov_stay_fir(vec![0, 4, 5, 6, 7], TapeMovement::Right(None))
         );
     }
+
+    #[test]
+    // Accepts (0* U 1*)(0* U 1*)
+    fn accepts_regex_union_contacat_star() {
+        let table = vec![
+            // State 0:
+            HashSet::from([1, 3]),
+            HashSet::from([2, 4]),
+            // State 1: 0*
+            HashSet::from([1, 3]),
+            HashSet::from([4]),
+            // State 2: 1*
+            HashSet::from([3]),
+            HashSet::from([2, 4]),
+            // State 3: 0*
+            HashSet::from([3]),
+            HashSet::from([]),
+            // State 4: 1*
+            HashSet::from([]),
+            HashSet::from([4]),
+        ];
+
+        let nfa = Nfa::build(table, HashSet::from([0, 3, 4]), 5, 2).unwrap();
+        assert!(nfa.accepts(&[]).unwrap());
+        assert_eq!(
+            nfa.trace_states(&[]).unwrap(),
+            vec![(0, vec![TapeMovement::Stay(None)])]
+        );
+        assert!(nfa.accepts(&[0]).unwrap());
+        assert_eq!(
+            nfa.trace_states(&[0]).unwrap(),
+            add_tape_mov_stay_fir(vec![0, 3], TapeMovement::Right(None))
+        );
+        assert!(nfa.accepts(&[1]).unwrap());
+        assert_eq!(
+            nfa.trace_states(&[1]).unwrap(),
+            add_tape_mov_stay_fir(vec![0, 4], TapeMovement::Right(None))
+        );
+
+        assert!(nfa.accepts(&[0, 1]).unwrap());
+        assert_eq!(
+            nfa.trace_states(&[0, 1]).unwrap(),
+            add_tape_mov_stay_fir(vec![0, 1, 4], TapeMovement::Right(None))
+        );
+        assert!(nfa.accepts(&[1, 0]).unwrap());
+        assert_eq!(
+            nfa.trace_states(&[1, 0]).unwrap(),
+            add_tape_mov_stay_fir(vec![0, 2, 3], TapeMovement::Right(None))
+        );
+
+        assert!(!nfa.accepts(&[0, 1, 0]).unwrap());
+        assert_eq!(
+            nfa.trace_states(&[0, 1, 0]).unwrap(),
+            add_tape_mov_stay_fir(vec![0, 1, 4], TapeMovement::Right(None))
+        );
+
+        assert!(!nfa.accepts(&[1, 0, 1]).unwrap());
+        assert_eq!(
+            nfa.trace_states(&[1, 0, 1]).unwrap(),
+            add_tape_mov_stay_fir(vec![0, 2, 3], TapeMovement::Right(None))
+        );
+    }
 }
