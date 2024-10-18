@@ -37,33 +37,32 @@ impl EpsilonNfa {
     /// following form: The first states tranition for the input 0, are at index 0, 1 at 1, 2 at
     /// 2, ... max_char at max_char. At index max_char + 1 are the epsilon transitions for state 0.
     /// The same strucutre is used to store the rest of the tranitions. This means that the
-    /// input transition table should has a length of `((max_state + 1) * (max_char + 2))`
+    /// input transition table should has a length of `states  * (chars + 1))`
     pub fn build(
         transition_table: Vec<HashSet<u16>>,
         accept_states: HashSet<u16>,
-        max_state: u16,
-        max_char: u16,
+        states: u16,
+        chars: u16,
     ) -> Result<EpsilonNfa, ()> {
-        if transition_table.len() != ((max_state + 1) * (max_char + 2)) as usize {
+        if transition_table.len() != (states * (chars + 1)) as usize {
             return Err(());
         }
         if transition_table
             .iter()
             .flatten()
             .chain(accept_states.iter())
-            .any(|item| item > &max_state)
+            .any(|&item| item >= states)
         {
             return Err(());
         }
 
-        let epslion_closure_paths =
-            Self::epsilon_closure_paths(&transition_table, max_state, max_char);
+        let epslion_closure_paths = Self::epsilon_closure_paths(&transition_table, states, chars);
         let nfa = Self::convert_to_nfa(
             &transition_table,
             &accept_states,
             &epslion_closure_paths,
-            max_state,
-            max_char,
+            states,
+            chars,
         );
         Ok(EpsilonNfa {
             nfa,
@@ -80,16 +79,14 @@ impl EpsilonNfa {
     /// the epslion transitions
     fn epsilon_closure_paths(
         transition_table: &Vec<HashSet<u16>>,
-        max_state: u16,
-        max_char: u16,
+        states: u16,
+        chars: u16,
     ) -> Vec<HashMap<u16, Vec<u16>>> {
-        debug_assert_eq!(
-            transition_table.len(),
-            ((max_state + 1) * (max_char + 2)) as usize
-        );
-        let mut epsilon_paths = vec![HashMap::new(); max_state as usize + 1];
-        let mut seen = vec![false; max_state as usize + 1];
-        for search_src_state in 0..=max_state {
+        debug_assert_eq!(transition_table.len(), (states * (chars + 1)) as usize);
+
+        let mut epsilon_paths = vec![HashMap::new(); states as usize + 1];
+        let mut seen = vec![false; states as usize + 1];
+        for search_src_state in 0..=states {
             seen.fill(false);
             seen[search_src_state as usize] = true;
             let mut q: VecDeque<Vec<u16>> = VecDeque::from([vec![search_src_state]]);
@@ -106,11 +103,9 @@ impl EpsilonNfa {
 
                 // Iterate over all of the states that can be reached though a epslion tranition
                 // and visit add their path to the queue if they have not been seen yet.
-                for &dest_state in &transition_table[table_lookup(
-                    cur_state as usize,
-                    max_char as usize + 1,
-                    max_char as usize + 1,
-                )] {
+                for &dest_state in &transition_table
+                    [table_lookup(cur_state as usize, chars as usize + 1, chars as usize + 1)]
+                {
                     if seen[dest_state as usize] {
                         continue;
                     }
