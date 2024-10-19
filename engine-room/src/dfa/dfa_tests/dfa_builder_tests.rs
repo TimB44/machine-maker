@@ -1,9 +1,9 @@
 use crate::{
     dfa::{Dfa, DfaBuilder},
     machine_utils::add_tape_mov_stay_fir,
-    StateMachine, StateMachineBuilder, TapeMovement,
+    transitions, StateMachine, StateMachineBuilder, TapeMovement,
 };
-use std::collections::HashSet;
+use std::{collections::HashSet, iter::RepeatN};
 
 #[test]
 fn create_builder_from_scratch() {
@@ -55,14 +55,77 @@ fn remove_state_first() {
 }
 
 #[test]
-fn remove_state_middle_large() {
-    let dfa = Dfa::build(vec![0, 1], HashSet::from([0, 1]), 2, 1).unwrap();
+fn remove_state_large() {
+    let table = (0..8).into_iter().rev().collect::<Vec<u16>>().repeat(8);
+    let dfa = Dfa::build(table, HashSet::from([0, 2, 4, 6]), 8, 8).unwrap();
     let mut builder: DfaBuilder = dfa.into();
 
+    assert_eq!(builder.remove_state(1).unwrap(), Some(7));
+    assert_eq!(builder.states, 7);
+    assert_eq!(builder.chars, 8);
+    assert_eq!(builder.accept_states, HashSet::from([0, 2, 4, 6]));
+    assert_eq!(
+        builder.building_layers,
+        [
+            Some(1),
+            Some(6),
+            Some(5),
+            Some(4),
+            Some(3),
+            Some(2),
+            None,
+            Some(0)
+        ]
+        .into_iter()
+        .collect::<Vec<Option<u16>>>()
+        .repeat(7)
+    );
+
+    assert_eq!(builder.remove_state(1).unwrap(), Some(6));
+    assert_eq!(builder.states, 6);
+    assert_eq!(builder.chars, 8);
+    assert_eq!(builder.accept_states, HashSet::from([0, 2, 4, 1]));
+    assert_eq!(
+        builder.building_layers,
+        [
+            None,
+            Some(1),
+            Some(5),
+            Some(4),
+            Some(3),
+            Some(2),
+            None,
+            Some(0)
+        ]
+        .into_iter()
+        .collect::<Vec<Option<u16>>>()
+        .repeat(6)
+    );
+}
+
+#[test]
+fn remove_state_invalid_no_effect() {
+    let dfa = Dfa {
+        transition_table: vec![0, 1, 0, 0, 0, 0],
+        accept_states: HashSet::from([1]),
+        states: 2,
+        chars: 3,
+    };
+    let mut builder: DfaBuilder = dfa.try_into().unwrap();
+    let copy = builder.clone();
+
+    for i in 2..100 {
+        assert!(builder.remove_state(i).is_err());
+        assert_eq!(builder, copy);
+    }
+
     assert_eq!(builder.remove_state(0).unwrap(), Some(1));
-    let new_dfa: Dfa = builder.try_into().unwrap();
-    assert_eq!(new_dfa.states, 1);
-    assert_eq!(new_dfa.chars, 1);
-    assert_eq!(new_dfa.transition_table, vec![0]);
-    assert_eq!(new_dfa.accept_states, HashSet::from([0]));
+    assert_eq!(builder.states, 1);
+    assert_eq!(builder.accept_states, HashSet::from([0]));
+    assert_eq!(builder.building_layers, [None, None, None,]);
+
+    let copy = builder.clone();
+
+    assert!(builder.remove_state(0).is_err());
+    assert_eq!(builder, copy);
 }

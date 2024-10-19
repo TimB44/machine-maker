@@ -14,7 +14,7 @@ pub struct Dfa {
     chars: u16,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct DfaBuilder {
     accept_states: HashSet<u16>,
     states: u16,
