@@ -127,11 +127,11 @@ impl StateMachineBuilder for DfaBuilder {
 
     fn set_transition(&mut self, transition: SingleChar) -> Result<(), Self::Error> {
         let SingleChar { start, end, char } = transition;
-        if start >= self.states || end >= self.states {
+        if start >= self.states || end >= self.states || char >= self.chars {
             return Err(());
         }
 
-        self.building_layers[table_lookup(start as usize, self.chars as usize, char as usize)] =
+        self.building_layers[table_lookup(start as usize, char as usize, self.chars as usize)] =
             Some(end);
 
         Ok(())

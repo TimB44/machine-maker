@@ -1,9 +1,10 @@
 use crate::{
     dfa::{Dfa, DfaBuilder},
     machine_utils::add_tape_mov_stay_fir,
-    transitions, StateMachine, StateMachineBuilder, TapeMovement,
+    transitions::{self, SingleChar},
+    StateMachine, StateMachineBuilder, TapeMovement,
 };
-use std::{collections::HashSet, iter::RepeatN};
+use std::{cmp::min, collections::HashSet, iter::RepeatN};
 
 #[test]
 fn create_builder_from_scratch() {
@@ -128,4 +129,123 @@ fn remove_state_invalid_no_effect() {
 
     assert!(builder.remove_state(0).is_err());
     assert_eq!(builder, copy);
+}
+
+#[test]
+fn add_then_remove() {
+    let dfa = Dfa {
+        transition_table: vec![0, 1, 0, 0, 0, 0],
+        accept_states: HashSet::from([1]),
+        states: 2,
+        chars: 3,
+    };
+    let mut builder: DfaBuilder = dfa.try_into().unwrap();
+    let copy = builder.clone();
+
+    for i in 1..100 {
+        for _ in 0..i {
+            builder.add_state();
+        }
+
+        for _ in 0..i {
+            builder
+                .remove_state(min(builder.states - 1, 2 + i % 7))
+                .unwrap();
+        }
+        assert_eq!(builder, copy);
+    }
+}
+
+#[test]
+fn set_transition_invalid() {
+    let dfa = Dfa {
+        transition_table: vec![0, 1, 0, 0, 0, 0],
+        accept_states: HashSet::from([1]),
+        states: 2,
+        chars: 3,
+    };
+
+    let mut builder: DfaBuilder = dfa.try_into().unwrap();
+    assert!(builder
+        .set_transition(SingleChar {
+            start: 0,
+            end: 0,
+            char: 3
+        })
+        .is_err());
+
+    assert!(builder
+        .set_transition(SingleChar {
+            start: 0,
+            end: 0,
+            char: 4
+        })
+        .is_err());
+    assert!(builder
+        .set_transition(SingleChar {
+            start: 0,
+            end: 2,
+            char: 0
+        })
+        .is_err());
+    assert!(builder
+        .set_transition(SingleChar {
+            start: 2,
+            end: 0,
+            char: 1
+        })
+        .is_err());
+    assert!(builder
+        .set_transition(SingleChar {
+            start: 5,
+            end: 4,
+            char: 2
+        })
+        .is_err());
+
+    assert_eq!(builder.add_state(), 2);
+
+    assert!(builder
+        .set_transition(SingleChar {
+            start: 2,
+            end: 1,
+            char: 0
+        })
+        .is_ok());
+    assert!(builder
+        .set_transition(SingleChar {
+            start: 1,
+            end: 2,
+            char: 2
+        })
+        .is_ok());
+    assert!(builder
+        .set_transition(SingleChar {
+            start: 2,
+            end: 2,
+            char: 0
+        })
+        .is_ok());
+
+    assert!(builder
+        .set_transition(SingleChar {
+            start: 3,
+            end: 2,
+            char: 0
+        })
+        .is_err());
+    assert!(builder
+        .set_transition(SingleChar {
+            start: 2,
+            end: 3,
+            char: 1
+        })
+        .is_err());
+    assert!(builder
+        .set_transition(SingleChar {
+            start: 5,
+            end: 4,
+            char: 2
+        })
+        .is_err());
 }
