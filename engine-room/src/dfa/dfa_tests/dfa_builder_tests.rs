@@ -157,7 +157,7 @@ fn add_then_remove() {
 }
 
 #[test]
-fn set_transition_invalid() {
+fn set_transition() {
     let dfa = Dfa {
         transition_table: vec![0, 1, 0, 0, 0, 0],
         accept_states: HashSet::from([1]),
@@ -170,10 +170,52 @@ fn set_transition_invalid() {
         .set_transition(SingleChar {
             start: 0,
             end: 0,
+            char: 0
+        })
+        .is_ok());
+    assert!(builder
+        .set_transition(SingleChar {
+            start: 0,
+            end: 0,
+            char: 1
+        })
+        .is_ok());
+    assert!(builder
+        .set_transition(SingleChar {
+            start: 0,
+            end: 0,
+            char: 2
+        })
+        .is_ok());
+    assert!(builder
+        .set_transition(SingleChar {
+            start: 1,
+            end: 0,
+            char: 0
+        })
+        .is_ok());
+    assert!(builder
+        .set_transition(SingleChar {
+            start: 0,
+            end: 1,
+            char: 1
+        })
+        .is_ok());
+    assert!(builder
+        .set_transition(SingleChar {
+            start: 1,
+            end: 1,
+            char: 2
+        })
+        .is_ok());
+
+    assert!(builder
+        .set_transition(SingleChar {
+            start: 0,
+            end: 0,
             char: 3
         })
         .is_err());
-
     assert!(builder
         .set_transition(SingleChar {
             start: 0,
@@ -248,4 +290,136 @@ fn set_transition_invalid() {
             char: 2
         })
         .is_err());
+}
+
+#[test]
+fn set_transition_after_remove() {
+    let dfa = Dfa::build(vec![1, 2, 0], HashSet::from([2]), 3, 1).unwrap();
+    let mut builder: DfaBuilder = dfa.into();
+    assert_eq!(builder.remove_state(2).unwrap(), None);
+    assert_eq!(builder.accept_states, HashSet::new());
+    assert_eq!(builder.states, 2);
+    assert_eq!(builder.chars, 1);
+
+    assert!(builder
+        .set_transition(SingleChar {
+            start: 0,
+            end: 1,
+            char: 0,
+        })
+        .is_ok());
+    assert!(builder
+        .set_transition(SingleChar {
+            start: 1,
+            end: 0,
+            char: 0,
+        })
+        .is_ok());
+    assert!(builder
+        .set_transition(SingleChar {
+            start: 1,
+            end: 1,
+            char: 0,
+        })
+        .is_ok());
+
+    assert!(builder
+        .set_transition(SingleChar {
+            start: 0,
+            end: 2,
+            char: 0,
+        })
+        .is_err());
+    assert!(builder
+        .set_transition(SingleChar {
+            start: 2,
+            end: 1,
+            char: 0,
+        })
+        .is_err());
+
+    assert!(builder
+        .set_transition(SingleChar {
+            start: 2,
+            end: 2,
+            char: 0,
+        })
+        .is_err());
+    assert!(builder
+        .set_transition(SingleChar {
+            start: 10,
+            end: 0,
+            char: 0,
+        })
+        .is_err());
+    assert!(builder
+        .set_transition(SingleChar {
+            start: 4,
+            end: 10,
+            char: 0,
+        })
+        .is_err());
+}
+
+#[test]
+fn set_start_state() {
+    let dfa = Dfa::build(vec![1, 0], HashSet::from([1]), 2, 1).unwrap();
+    let mut builder: DfaBuilder = dfa.into();
+    let copy = builder.clone();
+    builder.set_start_state(0).unwrap();
+    assert_eq!(builder, copy);
+
+    builder.set_start_state(1).unwrap();
+    assert_eq!(builder.building_layers, vec![Some(1), Some(0)]);
+    assert_eq!(builder.accept_states, HashSet::from([0]));
+    assert_eq!(builder.states, 2);
+    assert_eq!(builder.chars, 1);
+}
+
+#[test]
+fn set_start_state_invalid() {
+    let dfa = Dfa::build(vec![1, 0], HashSet::from([1]), 2, 1).unwrap();
+    let mut builder: DfaBuilder = dfa.into();
+    let copy = builder.clone();
+    for i in 2..100 {
+        assert!(builder.set_start_state(i).is_err());
+    }
+
+    assert_eq!(builder, copy);
+}
+
+#[test]
+fn add_char() {
+    let dfa = Dfa::build(vec![1, 0], HashSet::from([1]), 2, 1).unwrap();
+    let mut builder: DfaBuilder = dfa.into();
+    let copy = builder.clone();
+    builder.add_char();
+    builder.remove_char(1).unwrap();
+    assert_eq!(builder, copy);
+
+    builder.add_char();
+    assert_eq!(builder.building_layers, vec![Some(1), None, Some(0), None]);
+    assert_eq!(builder.accept_states, copy.accept_states);
+    assert_eq!(builder.states, copy.states);
+    assert_eq!(builder.chars, 2);
+}
+
+#[test]
+fn add_accept_state() {
+    let dfa = Dfa::build(vec![1, 0], HashSet::from([1]), 2, 1).unwrap();
+    let mut builder: DfaBuilder = dfa.into();
+    let copy = builder.clone();
+
+    for i in 2..100 {
+        assert!(builder.add_accept_state(i).is_err());
+        assert_eq!(builder, copy);
+    }
+    builder.add_accept_state(1).unwrap();
+    assert_eq!(builder, copy);
+
+    builder.add_accept_state(0).unwrap();
+    assert_eq!(builder.building_layers, copy.building_layers);
+    assert_eq!(builder.accept_states, HashSet::from([0, 1]));
+    assert_eq!(builder.states, copy.states);
+    assert_eq!(builder.chars, copy.chars);
 }

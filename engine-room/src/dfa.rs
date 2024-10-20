@@ -138,7 +138,7 @@ impl StateMachineBuilder for DfaBuilder {
     }
 
     fn set_start_state(&mut self, new_start_state: u16) -> Result<(), Self::Error> {
-        if new_start_state < self.states {
+        if new_start_state >= self.states {
             return Err(());
         }
         self.swap_state(0, new_start_state);
@@ -217,14 +217,14 @@ impl TryFrom<DfaBuilder> for Dfa {
 
     fn try_from(value: DfaBuilder) -> Result<Self, Self::Error> {
         Ok(Dfa::build(
-            dbg!(value
+            value
                 .building_layers
                 .into_iter()
                 .collect::<Option<Vec<u16>>>()
-                .ok_or(()))?,
-            dbg!(value.accept_states),
-            dbg!(value.states),
-            dbg!(value.chars),
+                .ok_or(())?,
+            value.accept_states,
+            value.states,
+            value.chars,
         )?)
     }
 }
