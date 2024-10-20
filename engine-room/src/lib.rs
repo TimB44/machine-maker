@@ -65,7 +65,7 @@ where
     fn remove_accept_state(&mut self, state: u16) -> Result<bool, Self::Error>;
 
     fn add_char(&mut self);
-    fn remove_char(&mut self, char: u16) -> Result<Self::Error, ()>;
+    fn remove_char(&mut self, char: u16) -> Result<Option<u16>, Self::Error>;
 }
 
 /// # Tape Movement

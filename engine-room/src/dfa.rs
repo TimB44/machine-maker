@@ -159,7 +159,7 @@ impl StateMachineBuilder for DfaBuilder {
         debug_assert!(self.building_layers.len() == (self.chars * self.states) as usize);
     }
 
-    fn remove_char(&mut self, char: u16) -> Result<(), ()> {
+    fn remove_char(&mut self, char: u16) -> Result<Option<u16>, Self::Error> {
         if self.chars == 1 {
             return Err(());
         }
@@ -180,7 +180,11 @@ impl StateMachineBuilder for DfaBuilder {
             .collect();
         self.chars -= 1;
         debug_assert!(self.building_layers.len() == (self.chars * self.states) as usize);
-        Ok(())
+        if char == self.chars {
+            Ok(None)
+        } else {
+            Ok(Some(self.chars))
+        }
     }
 
     fn add_accept_state(&mut self, state: u16) -> Result<bool, Self::Error> {

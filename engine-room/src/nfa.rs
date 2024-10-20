@@ -58,7 +58,7 @@ impl StateMachineBuilder for NfaBuilder {
         todo!()
     }
 
-    fn remove_char(&mut self, char: u16) -> Result<Self::Error, ()> {
+    fn remove_char(&mut self, char: u16) -> Result<Option<u16>, Self::Error> {
         todo!()
     }
 }
