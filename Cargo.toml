@@ -2,4 +2,5 @@
 resolver = "2"
 members = [
   "engine-room"
-, "state-view"]
+, "state-view"
+, "machine-maker/src-tauri"]
